@@ -469,6 +469,7 @@ def load_sample_data():
 
 def prepare_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     working = df.copy()
+
     defaults = {
         "id": "",
         "event_name": "",
@@ -495,12 +496,14 @@ def prepare_dataframe(df: pd.DataFrame) -> pd.DataFrame:
         "address": "",
         "main_content": "",
     }
+
     for col, default in defaults.items():
         if col not in working.columns:
             working[col] = default
 
     working["start_date"] = working["start_date"].apply(to_date)
     working["end_date"] = working["end_date"].apply(to_date)
+
     working["status"] = working.apply(
         lambda row: infer_status(row["start_date"], row["end_date"])
         if text_or_default(row["status"], "") == ""
@@ -508,7 +511,30 @@ def prepare_dataframe(df: pd.DataFrame) -> pd.DataFrame:
         axis=1,
     )
 
-    text_cols = list(defaults.keys())
+    text_cols = [
+        "id",
+        "event_name",
+        "event_type",
+        "host_brand",
+        "venue_name",
+        "region",
+        "status",
+        "source_link",
+        "ai_summary",
+        "keywords",
+        "target_estimate",
+        "importance",
+        "benchmark_value",
+        "lotte_idea",
+        "one_line_summary",
+        "visual_feature",
+        "experience_element",
+        "buzz_basis",
+        "internal_similarity",
+        "internal_performance",
+        "address",
+        "main_content",
+    ]
     for col in text_cols:
         working[col] = working[col].apply(lambda x: text_or_default(x, ""))
 
@@ -516,11 +542,15 @@ def prepare_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     working["benchmark_score"] = working["benchmark_value"].apply(safe_score)
     working["sort_start"] = working["start_date"].apply(lambda x: x or date.max)
     working["sort_end"] = working["end_date"].apply(lambda x: x or date.max)
+
     return working
 
 
 def filter_dataframe(df, view_type, selected_date, selected_types, selected_regions, selected_targets, keyword):
     filtered = df.copy()
+
+    filtered["start_date"] = filtered["start_date"].apply(to_date)
+    filtered["end_date"] = filtered["end_date"].apply(to_date)
 
     if selected_types:
         filtered = filtered[filtered["event_type"].isin(selected_types)]
@@ -538,14 +568,27 @@ def filter_dataframe(df, view_type, selected_date, selected_types, selected_regi
 
     if view_type == "월":
         month_start = selected_date.replace(day=1)
-        month_end = date(selected_date.year, selected_date.month, calendar.monthrange(selected_date.year, selected_date.month)[1])
-        filtered = filtered[(filtered["start_date"] <= month_end) & (filtered["end_date"] >= month_start)]
+        month_end = date(
+            selected_date.year,
+            selected_date.month,
+            calendar.monthrange(selected_date.year, selected_date.month)[1],
+        )
+        filtered = filtered[
+            (filtered["start_date"] <= month_end) &
+            (filtered["end_date"] >= month_start)
+        ]
     elif view_type == "주":
         week_start = selected_date - timedelta(days=selected_date.weekday())
         week_end = week_start + timedelta(days=6)
-        filtered = filtered[(filtered["start_date"] <= week_end) & (filtered["end_date"] >= week_start)]
+        filtered = filtered[
+            (filtered["start_date"] <= week_end) &
+            (filtered["end_date"] >= week_start)
+        ]
 
-    return filtered.sort_values(["importance_score", "benchmark_score", "sort_start"], ascending=[False, False, True])
+    return filtered.sort_values(
+        ["importance_score", "benchmark_score", "sort_start"],
+        ascending=[False, False, True],
+    )
 
 
 def build_insights(df, selected_date):
@@ -566,6 +609,7 @@ def build_insights(df, selected_date):
     keyword_pool = []
     for val in df["keywords"].tolist():
         keyword_pool.extend([x.strip() for x in str(val).split(",") if x.strip()])
+
     top_keywords = pd.Series(keyword_pool).value_counts().head(6).index.tolist() if keyword_pool else []
     return {"summary_lines": summary_lines, "keywords": top_keywords}
 
@@ -607,7 +651,6 @@ def inject_css():
         .detail-label { font-size:12px; font-weight:800; color:#6B7280; margin-bottom:4px; }
         .detail-value { font-size:14px; color:#111827; line-height:1.5; margin-bottom:12px; }
         .stButton > button { border-radius:10px; }
-        div[data-testid="stVerticalBlock"] > div:has(.calendar-slot) { height: 100%; }
         </style>
         """,
         unsafe_allow_html=True,
@@ -736,26 +779,26 @@ def render_month_calendar(df, selected_date):
             in_month = day.month == month
 
             with cols[i]:
-                st.markdown('<div class="calendar-slot">', unsafe_allow_html=True)
                 bg_cls = "cell-box" if in_month else "cell-box out-month"
-                st.markdown(f'<div class="{bg_cls}">', unsafe_allow_html=True)
+                with st.container():
+                    st.markdown(f'<div class="{bg_cls}">', unsafe_allow_html=True)
 
-                is_selected = day == st.session_state["selected_day"]
-                if is_selected:
-                    st.markdown(f'<div class="date-pill-selected">{day.day}</div>', unsafe_allow_html=True)
-                else:
-                    if st.button(str(day.day), key=f"day_btn_{day.isoformat()}", use_container_width=False):
-                        st.session_state["selected_day"] = day
-                        st.rerun()
+                    is_selected = day == st.session_state["selected_day"]
+                    if is_selected:
+                        st.markdown(f'<div class="date-pill-selected">{day.day}</div>', unsafe_allow_html=True)
+                    else:
+                        if st.button(str(day.day), key=f"day_btn_{day.isoformat()}", use_container_width=False):
+                            st.session_state["selected_day"] = day
+                            st.rerun()
 
-                if not daily.empty:
-                    for _, row in daily.head(2).iterrows():
-                        render_event_badge(row)
-                    extra = len(daily) - 2
-                    if extra > 0:
-                        st.caption(f"+ {extra}건 더 있음")
+                    if not daily.empty:
+                        for _, row in daily.head(2).iterrows():
+                            render_event_badge(row)
+                        extra = len(daily) - 2
+                        if extra > 0:
+                            st.caption(f"+ {extra}건 더 있음")
 
-                st.markdown("</div></div>", unsafe_allow_html=True)
+                    st.markdown("</div>", unsafe_allow_html=True)
 
     legend = st.columns(5)
     labels = ["전시", "팝업", "경쟁사 이벤트", "지자체 행사", "협업/브랜드"]

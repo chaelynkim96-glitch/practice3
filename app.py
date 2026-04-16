@@ -1,5 +1,6 @@
 import calendar
 from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import streamlit as st
@@ -10,6 +11,8 @@ st.set_page_config(
     page_icon="📅",
     layout="wide",
 )
+
+KST = ZoneInfo("Asia/Seoul")
 
 DEFAULT_TYPES = ["전시", "팝업", "경쟁사 이벤트", "지자체 행사", "협업/브랜드", "기타"]
 DEFAULT_REGIONS = ["서울", "수도권", "부산", "대구", "광주", "대전", "기타"]
@@ -25,6 +28,10 @@ TYPE_STYLES = {
 }
 
 IMPORTANCE_SCORE = {"상": 3, "중": 2, "하": 1}
+
+
+def seoul_today() -> date:
+    return datetime.now(KST).date()
 
 
 def to_date(value):
@@ -65,7 +72,7 @@ def safe_score(value):
 
 
 def infer_status(start_date, end_date, today=None):
-    today = today or date.today()
+    today = today or seoul_today()
     if start_date is None or end_date is None:
         return "예정"
     if today < start_date:
@@ -512,28 +519,11 @@ def prepare_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     )
 
     text_cols = [
-        "id",
-        "event_name",
-        "event_type",
-        "host_brand",
-        "venue_name",
-        "region",
-        "status",
-        "source_link",
-        "ai_summary",
-        "keywords",
-        "target_estimate",
-        "importance",
-        "benchmark_value",
-        "lotte_idea",
-        "one_line_summary",
-        "visual_feature",
-        "experience_element",
-        "buzz_basis",
-        "internal_similarity",
-        "internal_performance",
-        "address",
-        "main_content",
+        "id", "event_name", "event_type", "host_brand", "venue_name", "region",
+        "status", "source_link", "ai_summary", "keywords", "target_estimate",
+        "importance", "benchmark_value", "lotte_idea", "one_line_summary",
+        "visual_feature", "experience_element", "buzz_basis",
+        "internal_similarity", "internal_performance", "address", "main_content",
     ]
     for col in text_cols:
         working[col] = working[col].apply(lambda x: text_or_default(x, ""))
@@ -548,7 +538,6 @@ def prepare_dataframe(df: pd.DataFrame) -> pd.DataFrame:
 
 def filter_dataframe(df, view_type, selected_date, selected_types, selected_regions, selected_targets, keyword):
     filtered = df.copy()
-
     filtered["start_date"] = filtered["start_date"].apply(to_date)
     filtered["end_date"] = filtered["end_date"].apply(to_date)
 
@@ -568,27 +557,14 @@ def filter_dataframe(df, view_type, selected_date, selected_types, selected_regi
 
     if view_type == "월":
         month_start = selected_date.replace(day=1)
-        month_end = date(
-            selected_date.year,
-            selected_date.month,
-            calendar.monthrange(selected_date.year, selected_date.month)[1],
-        )
-        filtered = filtered[
-            (filtered["start_date"] <= month_end) &
-            (filtered["end_date"] >= month_start)
-        ]
+        month_end = date(selected_date.year, selected_date.month, calendar.monthrange(selected_date.year, selected_date.month)[1])
+        filtered = filtered[(filtered["start_date"] <= month_end) & (filtered["end_date"] >= month_start)]
     elif view_type == "주":
         week_start = selected_date - timedelta(days=selected_date.weekday())
         week_end = week_start + timedelta(days=6)
-        filtered = filtered[
-            (filtered["start_date"] <= week_end) &
-            (filtered["end_date"] >= week_start)
-        ]
+        filtered = filtered[(filtered["start_date"] <= week_end) & (filtered["end_date"] >= week_start)]
 
-    return filtered.sort_values(
-        ["importance_score", "benchmark_score", "sort_start"],
-        ascending=[False, False, True],
-    )
+    return filtered.sort_values(["importance_score", "benchmark_score", "sort_start"], ascending=[False, False, True])
 
 
 def build_insights(df, selected_date):
@@ -609,8 +585,8 @@ def build_insights(df, selected_date):
     keyword_pool = []
     for val in df["keywords"].tolist():
         keyword_pool.extend([x.strip() for x in str(val).split(",") if x.strip()])
-
     top_keywords = pd.Series(keyword_pool).value_counts().head(6).index.tolist() if keyword_pool else []
+
     return {"summary_lines": summary_lines, "keywords": top_keywords}
 
 
@@ -628,29 +604,18 @@ def inject_css():
             display: inline-block; padding: 6px 11px; border-radius: 999px; font-size: 12px;
             font-weight: 700; margin-right: 8px; margin-bottom: 8px; background: #F3F0FF; color: #6D4CDB;
         }
-        .calendar-header { text-align: center; font-weight: 800; padding: 8px 0 10px 0; font-size: 18px; }
-        .cell-box {
-            background:#FFFFFF; border:1px solid #E5E7EB; border-radius:14px;
-            padding:8px; min-height:154px; display:flex; flex-direction:column; justify-content:flex-start;
-        }
-        .cell-box.out-month { background:#F3F4F6; }
-        .date-pill {
-            display:inline-block; min-width:34px; text-align:center; padding:6px 8px; border-radius:999px;
-            border:1px solid #D1D5DB; background:#FFFFFF; color:#111827; font-size:13px; font-weight:800; margin-bottom:8px;
-        }
-        .date-pill-selected {
-            display:inline-block; min-width:34px; text-align:center; padding:6px 8px; border-radius:999px;
-            background:#111827; color:#FFFFFF; font-size:13px; font-weight:800; margin-bottom:8px;
+        .calendar-header {
+            text-align: center; font-weight: 800; padding: 8px 0 10px 0; font-size: 18px;
         }
         .event-card {
-            border-radius:10px; padding:7px 8px; margin-bottom:6px; line-height:1.25;
+            border-radius: 10px; padding: 7px 8px; margin-bottom: 6px; line-height: 1.25;
         }
-        .event-type { font-size:11px; font-weight:800; margin-bottom:3px; }
-        .event-title { font-size:12px; font-weight:700; color:#111827; margin-bottom:2px; }
-        .event-meta { font-size:11px; color:#4B5563; }
-        .detail-label { font-size:12px; font-weight:800; color:#6B7280; margin-bottom:4px; }
-        .detail-value { font-size:14px; color:#111827; line-height:1.5; margin-bottom:12px; }
-        .stButton > button { border-radius:10px; }
+        .event-type { font-size: 11px; font-weight: 800; margin-bottom: 3px; }
+        .event-title { font-size: 12px; font-weight: 700; color: #111827; margin-bottom: 2px; }
+        .event-meta { font-size: 11px; color: #4B5563; }
+        .detail-label { font-size: 12px; font-weight: 800; color: #6B7280; margin-bottom: 4px; }
+        .detail-value { font-size: 14px; color: #111827; line-height: 1.5; margin-bottom: 12px; }
+        .stButton > button { border-radius: 10px; }
         </style>
         """,
         unsafe_allow_html=True,
@@ -661,6 +626,7 @@ def render_sidebar(df):
     with st.sidebar:
         st.markdown("## 이벤트 트렌드 캘린더")
         st.caption("AI 기반 이벤트·전시·팝업 트렌드 분석")
+        st.caption("Timezone: GMT+9 (Asia/Seoul)")
 
         uploaded_file = st.file_uploader("CSV 업로드", type=["csv"])
         uploaded_df = None
@@ -724,8 +690,9 @@ def render_top_controls():
 
     with c4:
         if st.button("오늘", use_container_width=True):
-            st.session_state["selected_date"] = date(2026, 4, 15)
-            st.session_state["selected_day"] = date(2026, 4, 15)
+            today_kst = seoul_today()
+            st.session_state["selected_date"] = today_kst.replace(day=1)
+            st.session_state["selected_day"] = today_kst
             st.rerun()
 
     with c5:
@@ -765,31 +732,60 @@ def render_month_calendar(df, selected_date):
     weekday_names = ["월", "화", "수", "목", "금", "토", "일"]
     weekday_colors = ["#111827", "#111827", "#111827", "#111827", "#111827", "#2563EB", "#DC2626"]
 
-    header_cols = st.columns(7)
+    header_cols = st.columns(7, gap="small")
     for i, wd in enumerate(weekday_names):
         with header_cols[i]:
-            st.markdown(f'<div class="calendar-header" style="color:{weekday_colors[i]};">{wd}</div>', unsafe_allow_html=True)
+            st.markdown(
+                f'<div class="calendar-header" style="color:{weekday_colors[i]};">{wd}</div>',
+                unsafe_allow_html=True,
+            )
 
     for week in weeks:
         cols = st.columns(7, gap="small")
         for i, day in enumerate(week):
             daily = df[df.apply(lambda row: event_matches_day(row, day), axis=1)].sort_values(
-                ["importance_score", "benchmark_score", "sort_end"], ascending=[False, False, True]
+                ["importance_score", "benchmark_score", "sort_end"],
+                ascending=[False, False, True],
             )
             in_month = day.month == month
 
             with cols[i]:
-                bg_cls = "cell-box" if in_month else "cell-box out-month"
-                with st.container():
-                    st.markdown(f'<div class="{bg_cls}">', unsafe_allow_html=True)
+                border = True
+                height_padding = 8
+                box = st.container(border=border)
 
-                    is_selected = day == st.session_state["selected_day"]
-                    if is_selected:
-                        st.markdown(f'<div class="date-pill-selected">{day.day}</div>', unsafe_allow_html=True)
-                    else:
-                        if st.button(str(day.day), key=f"day_btn_{day.isoformat()}", use_container_width=False):
-                            st.session_state["selected_day"] = day
-                            st.rerun()
+                with box:
+                    top_left, _ = st.columns([1, 3])
+
+                    with top_left:
+                        is_selected = day == st.session_state["selected_day"]
+                        if is_selected:
+                            st.markdown(
+                                f"""
+                                <div style="
+                                    display:inline-block;
+                                    min-width:34px;
+                                    text-align:center;
+                                    padding:6px 8px;
+                                    border-radius:999px;
+                                    background:#111827;
+                                    color:#FFFFFF;
+                                    font-size:13px;
+                                    font-weight:800;
+                                    margin-bottom:8px;
+                                ">
+                                    {day.day}
+                                </div>
+                                """,
+                                unsafe_allow_html=True,
+                            )
+                        else:
+                            if st.button(str(day.day), key=f"day_btn_{day.isoformat()}", use_container_width=False):
+                                st.session_state["selected_day"] = day
+                                st.rerun()
+
+                    if not in_month:
+                        st.caption("이전/다음 달")
 
                     if not daily.empty:
                         for _, row in daily.head(2).iterrows():
@@ -797,8 +793,11 @@ def render_month_calendar(df, selected_date):
                         extra = len(daily) - 2
                         if extra > 0:
                             st.caption(f"+ {extra}건 더 있음")
-
-                    st.markdown("</div>", unsafe_allow_html=True)
+                    else:
+                        st.markdown(
+                            f"<div style='height:{height_padding + 30}px;'></div>",
+                            unsafe_allow_html=True,
+                        )
 
     legend = st.columns(5)
     labels = ["전시", "팝업", "경쟁사 이벤트", "지자체 행사", "협업/브랜드"]
@@ -860,7 +859,8 @@ def render_list_view(df):
 
 def get_daily_events(df, selected_day):
     return df[df.apply(lambda row: event_matches_day(row, selected_day), axis=1)].sort_values(
-        ["importance_score", "benchmark_score", "sort_end"], ascending=[False, False, True]
+        ["importance_score", "benchmark_score", "sort_end"],
+        ascending=[False, False, True],
     )
 
 
@@ -1010,12 +1010,14 @@ def render_bottom_cards(df, insights):
 def main():
     inject_css()
 
+    today_kst = seoul_today()
+
     if "selected_date" not in st.session_state:
-        st.session_state["selected_date"] = date(2026, 4, 15)
+        st.session_state["selected_date"] = today_kst.replace(day=1)
     if "view_type" not in st.session_state:
         st.session_state["view_type"] = "월"
     if "selected_day" not in st.session_state:
-        st.session_state["selected_day"] = date(2026, 4, 15)
+        st.session_state["selected_day"] = today_kst
 
     df = load_sample_data()
     selected_types, selected_regions, selected_targets, keyword, uploaded_df = render_sidebar(df)

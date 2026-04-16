@@ -605,69 +605,139 @@ def inject_css():
         """
         <style>
         .stApp { background: #F7F7FA; }
-        .block-container { max-width: 1600px; padding-top: 1rem; padding-bottom: 1rem; }
 
-        .top-title { font-size: 30px; font-weight: 800; color: #111827; margin: 0; }
-        .sub-muted { color: #6B7280; font-size: 13px; }
-
-        .calendar-header-box {
-            background:#FFFFFF; border:1px solid #E5E7EB; border-radius:14px 14px 0 0;
-            padding:0; overflow:hidden; margin-bottom:0;
+        .block-container {
+            max-width: 1600px;
+            padding-top: 5.5rem;
+            padding-bottom: 1rem;
         }
 
-        .calendar-day-cell {
-            border:1px solid #E5E7EB;
-            background:#FFFFFF;
-            border-radius:0;
-            padding:8px;
-            min-height:180px;
+        .top-title {
+            font-size: 30px;
+            font-weight: 800;
+            color: #111827;
+            margin: 0;
         }
 
-        .calendar-day-cell.out-month {
-            background:#F3F4F6;
-        }
-
-        .day-num {
-            font-size:14px;
-            font-weight:800;
-            margin-bottom:8px;
+        .sub-muted {
+            color: #6B7280;
+            font-size: 13px;
         }
 
         .mini-card {
-            background:#FFFFFF;
-            border:1px solid #E5E7EB;
-            border-radius:14px;
-            padding:16px;
-            height:100%;
+            background: #FFFFFF;
+            border: 1px solid #E5E7EB;
+            border-radius: 14px;
+            padding: 16px;
+            height: 100%;
         }
 
         .panel-card {
-            background:#FFFFFF;
-            border:1px solid #E5E7EB;
-            border-radius:16px;
-            padding:18px;
+            background: #FFFFFF;
+            border: 1px solid #E5E7EB;
+            border-radius: 16px;
+            padding: 18px;
         }
 
         .pill {
-            display:inline-block;
-            padding:6px 11px;
-            border-radius:999px;
-            font-size:12px;
-            font-weight:700;
-            margin-right:8px;
-            margin-bottom:8px;
-            background:#F3F0FF;
-            color:#6D4CDB;
+            display: inline-block;
+            padding: 6px 11px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            background: #F3F0FF;
+            color: #6D4CDB;
         }
 
-        div[data-testid="stButton"] > button.day-select-btn {
-            padding: 0.2rem 0.45rem;
-            min-height: 0;
-            height: 32px;
-            border-radius: 8px;
+        .calendar-header {
+            text-align: center;
+            font-weight: 800;
+            padding: 10px 0 12px 0;
+            font-size: 18px;
+        }
+
+        .calendar-cell {
+            background: #FFFFFF;
+            border: 1px solid #E5E7EB;
+            border-radius: 14px;
+            padding: 8px;
+            min-height: 130px;
+        }
+
+        .calendar-cell.out-month {
+            background: #F3F4F6;
+        }
+
+        .date-pill {
+            display: inline-block;
+            min-width: 34px;
+            text-align: center;
+            padding: 6px 8px;
+            border-radius: 999px;
             border: 1px solid #D1D5DB;
             background: #FFFFFF;
+            color: #111827;
+            font-size: 13px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .date-pill-selected {
+            display: inline-block;
+            min-width: 34px;
+            text-align: center;
+            padding: 6px 8px;
+            border-radius: 999px;
+            background: #111827;
+            color: #FFFFFF;
+            font-size: 13px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .event-card {
+            border-radius: 10px;
+            padding: 7px 8px;
+            margin-bottom: 6px;
+            line-height: 1.25;
+        }
+
+        .event-type {
+            font-size: 11px;
+            font-weight: 800;
+            margin-bottom: 3px;
+        }
+
+        .event-title {
+            font-size: 12px;
             font-weight: 700;
+            color: #111827;
+            margin-bottom: 2px;
+        }
+
+        .event-meta {
+            font-size: 11px;
+            color: #4B5563;
+        }
+
+        .detail-label {
+            font-size: 12px;
+            font-weight: 800;
+            color: #6B7280;
+            margin-bottom: 4px;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            color: #111827;
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+
+        .stButton > button {
+            border-radius: 10px;
         }
         </style>
         """,
@@ -735,7 +805,10 @@ def render_top_controls():
     with c1:
         if st.button("‹", use_container_width=True):
             st.session_state["selected_date"] = prev_month
-            if st.session_state["selected_day"].month != prev_month.month or st.session_state["selected_day"].year != prev_month.year:
+            if (
+                st.session_state["selected_day"].month != prev_month.month
+                or st.session_state["selected_day"].year != prev_month.year
+            ):
                 st.session_state["selected_day"] = prev_month
             st.rerun()
 
@@ -762,7 +835,10 @@ def render_top_controls():
     with c5:
         if st.button("›", use_container_width=True):
             st.session_state["selected_date"] = next_month
-            if st.session_state["selected_day"].month != next_month.month or st.session_state["selected_day"].year != next_month.year:
+            if (
+                st.session_state["selected_day"].month != next_month.month
+                or st.session_state["selected_day"].year != next_month.year
+            ):
                 st.session_state["selected_day"] = next_month
             st.rerun()
 
@@ -777,22 +853,10 @@ def render_event_badge(row):
     style = get_type_style(row["event_type"])
     st.markdown(
         f"""
-        <div style="
-            background:{style['bg']};
-            border-radius:10px;
-            padding:7px 8px;
-            margin-bottom:6px;
-            line-height:1.25;
-        ">
-            <div style="font-size:11px; font-weight:800; color:{style['text']}; margin-bottom:3px;">
-                {row['event_type']}
-            </div>
-            <div style="font-size:12px; font-weight:700; color:#111827; margin-bottom:2px;">
-                {row['event_name']}
-            </div>
-            <div style="font-size:11px; color:#4B5563;">
-                {row['venue_name']}
-            </div>
+        <div class="event-card" style="background:{style['bg']};">
+            <div class="event-type" style="color:{style['text']};">{row['event_type']}</div>
+            <div class="event-title">{row['event_name']}</div>
+            <div class="event-meta">{row['venue_name']}</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -812,77 +876,33 @@ def render_month_calendar(df, selected_date):
     for i, wd in enumerate(weekday_names):
         with header_cols[i]:
             st.markdown(
-                f"""
-                <div style="
-                    text-align:center;
-                    font-weight:800;
-                    color:{weekday_colors[i]};
-                    background:#FFFFFF;
-                    border:1px solid #E5E7EB;
-                    border-bottom:none;
-                    padding:14px 0;
-                ">
-                    {wd}
-                </div>
-                """,
+                f'<div class="calendar-header" style="color:{weekday_colors[i]};">{wd}</div>',
                 unsafe_allow_html=True,
             )
 
-    for week_idx, week in enumerate(weeks):
+    for week in weeks:
         cols = st.columns(7)
         for i, day in enumerate(week):
             daily = df[df.apply(lambda row: event_matches_day(row, day), axis=1)].sort_values(
-                ["importance_score", "benchmark_score", "sort_end"], ascending=[False, False, True]
+                ["importance_score", "benchmark_score", "sort_end"],
+                ascending=[False, False, True],
             )
 
             in_month = day.month == month
 
             with cols[i]:
-                bg = "#FFFFFF" if in_month else "#F3F4F6"
-                border_radius = "0"
-                if week_idx == len(weeks) - 1 and i == 0:
-                    border_radius = "0 0 0 14px"
-                elif week_idx == len(weeks) - 1 and i == 6:
-                    border_radius = "0 0 14px 0"
+                bg_class = "calendar-cell" if in_month else "calendar-cell out-month"
+                st.markdown(f'<div class="{bg_class}">', unsafe_allow_html=True)
 
-                st.markdown(
-                    f"""
-                    <div style="
-                        border:1px solid #E5E7EB;
-                        background:{bg};
-                        min-height:185px;
-                        padding:8px;
-                        border-radius:{border_radius};
-                    ">
-                    """,
-                    unsafe_allow_html=True,
-                )
-
-                day_color = weekday_colors[i]
                 is_selected = day == st.session_state["selected_day"]
-
-                btn_label = f"{day.day}"
                 if is_selected:
                     st.markdown(
-                        f"""
-                        <div style="
-                            display:inline-block;
-                            background:#111827;
-                            color:#FFFFFF;
-                            font-size:13px;
-                            font-weight:800;
-                            border-radius:999px;
-                            padding:4px 9px;
-                            margin-bottom:8px;
-                        ">
-                            {btn_label}
-                        </div>
-                        """,
+                        f'<div class="date-pill-selected">{day.day}</div>',
                         unsafe_allow_html=True,
                     )
                 else:
                     if st.button(
-                        btn_label,
+                        str(day.day),
                         key=f"day_btn_{day.isoformat()}",
                         help=f"{day.isoformat()} 선택",
                         use_container_width=False,
@@ -890,9 +910,7 @@ def render_month_calendar(df, selected_date):
                         st.session_state["selected_day"] = day
                         st.rerun()
 
-                if daily.empty:
-                    st.caption(" ")
-                else:
+                if not daily.empty:
                     for _, row in daily.head(2).iterrows():
                         render_event_badge(row)
                     extra = len(daily) - 2
@@ -973,7 +991,8 @@ def render_list_view(df):
 # -----------------------------------
 def get_daily_events(df, selected_day):
     return df[df.apply(lambda row: event_matches_day(row, selected_day), axis=1)].sort_values(
-        ["importance_score", "benchmark_score", "sort_end"], ascending=[False, False, True]
+        ["importance_score", "benchmark_score", "sort_end"],
+        ascending=[False, False, True],
     )
 
 
@@ -1014,6 +1033,11 @@ def render_day_events_center(df, selected_day):
     return daily
 
 
+def render_detail_field(label, value):
+    st.markdown(f'<div class="detail-label">{label}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="detail-value">{text_or_default(value)}</div>', unsafe_allow_html=True)
+
+
 def render_right_panel(filtered_df, selected_day):
     st.markdown("### 상세 이벤트")
 
@@ -1029,38 +1053,55 @@ def render_right_panel(filtered_df, selected_day):
 
     style = get_type_style(row["event_type"])
 
-    st.markdown(
-        f"""
-        <div class="panel-card">
-            <div style="display:inline-block; background:{style['bg']}; color:{style['text']}; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:800; margin-bottom:10px;">
+    with st.container():
+        st.markdown('<div class="panel-card">', unsafe_allow_html=True)
+
+        st.markdown(
+            f"""
+            <div style="
+                display:inline-block;
+                background:{style['bg']};
+                color:{style['text']};
+                padding:6px 10px;
+                border-radius:999px;
+                font-size:12px;
+                font-weight:800;
+                margin-bottom:10px;
+            ">
                 {row['event_type']}
             </div>
-            <div style="font-size:20px; font-weight:800; color:#111827; margin-bottom:6px;">{row['event_name']}</div>
-            <div style="font-size:14px; color:#374151; margin-bottom:6px;">{row['venue_name']}</div>
-            <div style="font-size:13px; color:#6B7280; margin-bottom:6px;">{format_period(row['start_date'], row['end_date'])}</div>
-            <div style="font-size:13px; color:#6B7280; margin-bottom:18px;">📍 {text_or_default(row['address'])}</div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-            <div style="font-size:15px; font-weight:800; margin-bottom:8px;">핵심 요약</div>
-            <div style="font-size:14px; color:#374151; line-height:1.6; margin-bottom:18px;">{text_or_default(row['ai_summary'])}</div>
+        st.markdown(f"## {row['event_name']}")
+        st.write(row["venue_name"])
+        st.caption(format_period(row["start_date"], row["end_date"]))
+        st.caption(f"📍 {text_or_default(row['address'])}")
 
-            <div style="font-size:15px; font-weight:800; margin-bottom:10px;">상세 정보</div>
-            <div style="margin-bottom:8px;"><b>유형</b> · {row['event_type']}</div>
-            <div style="margin-bottom:8px;"><b>타깃</b> · {row['target_estimate']}</div>
-            <div style="margin-bottom:8px;"><b>주요 콘텐츠</b> · {row['main_content']}</div>
-            <div style="margin-bottom:8px;"><b>주최/브랜드</b> · {row['host_brand']}</div>
+        st.markdown("---")
+        st.markdown("#### 핵심 요약")
+        st.write(text_or_default(row["ai_summary"]))
 
-            <div style="font-size:15px; font-weight:800; margin:20px 0 8px;">AI 인사이트</div>
-            <div style="font-size:14px; color:#374151; line-height:1.6; margin-bottom:18px;">
-                최근 {row['event_type']} 유형의 증가와 체험형 콘텐츠 선호가 함께 나타납니다.
-                롯데백화점 행사 기획에 바로 참고할 수 있는 레퍼런스입니다.
-            </div>
+        st.markdown("---")
+        st.markdown("#### 상세 정보")
+        render_detail_field("유형", row["event_type"])
+        render_detail_field("타깃", row["target_estimate"])
+        render_detail_field("주요 콘텐츠", row["main_content"])
+        render_detail_field("주최/브랜드", row["host_brand"])
 
-            <div style="font-size:15px; font-weight:800; margin-bottom:8px;">롯데 적용 아이디어</div>
-            <div style="font-size:14px; color:#374151; line-height:1.7;">✓ {text_or_default(row['lotte_idea'])}</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+        st.markdown("---")
+        st.markdown("#### AI 인사이트")
+        st.write(
+            f"최근 {row['event_type']} 유형의 증가와 체험형 콘텐츠 선호가 함께 나타납니다. "
+            "롯데백화점 행사 기획에 바로 참고할 수 있는 레퍼런스입니다."
+        )
+
+        st.markdown("---")
+        st.markdown("#### 롯데 적용 아이디어")
+        st.write(f"✓ {text_or_default(row['lotte_idea'])}")
+
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 # -----------------------------------

@@ -11,9 +11,9 @@ st.set_page_config(
     layout="wide",
 )
 
-# -----------------------------
+# -----------------------------------
 # 상수
-# -----------------------------
+# -----------------------------------
 DEFAULT_TYPES = ["전시", "팝업", "경쟁사 이벤트", "지자체 행사", "협업/브랜드", "기타"]
 DEFAULT_REGIONS = ["서울", "수도권", "부산", "대구", "광주", "대전", "기타"]
 DEFAULT_TARGETS = ["2030", "가족", "VIP", "관광객", "지역고객", "전체"]
@@ -30,9 +30,9 @@ TYPE_STYLES = {
 IMPORTANCE_SCORE = {"상": 3, "중": 2, "하": 1}
 
 
-# -----------------------------
+# -----------------------------------
 # 유틸
-# -----------------------------
+# -----------------------------------
 def to_date(value):
     if pd.isna(value) or value in ("", None):
         return None
@@ -103,9 +103,9 @@ def get_type_style(event_type):
     return TYPE_STYLES.get(event_type, TYPE_STYLES["기타"])
 
 
-# -----------------------------
+# -----------------------------------
 # 샘플 데이터
-# -----------------------------
+# -----------------------------------
 def load_sample_data():
     rows = [
         {
@@ -473,13 +473,12 @@ def load_sample_data():
             "main_content": "사진전, 감상형, 큐레이션",
         },
     ]
-    df = pd.DataFrame(rows)
-    return prepare_dataframe(df)
+    return prepare_dataframe(pd.DataFrame(rows))
 
 
-# -----------------------------
-# 데이터 전처리
-# -----------------------------
+# -----------------------------------
+# 전처리 / 필터 / 인사이트
+# -----------------------------------
 def prepare_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     working = df.copy()
 
@@ -542,9 +541,6 @@ def prepare_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     return working
 
 
-# -----------------------------
-# 필터 / 인사이트
-# -----------------------------
 def filter_dataframe(df, view_type, selected_date, selected_types, selected_regions, selected_targets, keyword):
     filtered = df.copy()
 
@@ -579,10 +575,7 @@ def filter_dataframe(df, view_type, selected_date, selected_types, selected_regi
 
 def build_insights(df, selected_date):
     if df.empty:
-        return {
-            "summary_lines": ["조건에 맞는 데이터가 없습니다."],
-            "keywords": [],
-        }
+        return {"summary_lines": ["조건에 맞는 데이터가 없습니다."], "keywords": []}
 
     type_counts = df["event_type"].value_counts()
     region_counts = df["region"].value_counts()
@@ -599,182 +592,82 @@ def build_insights(df, selected_date):
     keyword_pool = []
     for val in df["keywords"].tolist():
         keyword_pool.extend([x.strip() for x in str(val).split(",") if x.strip()])
-    keyword_series = pd.Series(keyword_pool)
-    top_keywords = keyword_series.value_counts().head(6).index.tolist() if not keyword_series.empty else []
+    top_keywords = pd.Series(keyword_pool).value_counts().head(6).index.tolist() if keyword_pool else []
 
-    return {
-        "summary_lines": summary_lines,
-        "keywords": top_keywords,
-    }
+    return {"summary_lines": summary_lines, "keywords": top_keywords}
 
 
-# -----------------------------
+# -----------------------------------
 # 스타일
-# -----------------------------
+# -----------------------------------
 def inject_css():
     st.markdown(
         """
         <style>
-        .stApp {
-            background: #F7F7FA;
-        }
-        .block-container {
-            max-width: 1600px;
-            padding-top: 1rem;
-            padding-bottom: 1rem;
+        .stApp { background: #F7F7FA; }
+        .block-container { max-width: 1600px; padding-top: 1rem; padding-bottom: 1rem; }
+
+        .top-title { font-size: 30px; font-weight: 800; color: #111827; margin: 0; }
+        .sub-muted { color: #6B7280; font-size: 13px; }
+
+        .calendar-header-box {
+            background:#FFFFFF; border:1px solid #E5E7EB; border-radius:14px 14px 0 0;
+            padding:0; overflow:hidden; margin-bottom:0;
         }
 
-        .top-title {
-            font-size: 30px;
-            font-weight: 800;
-            color: #111827;
-            margin: 0;
+        .calendar-day-cell {
+            border:1px solid #E5E7EB;
+            background:#FFFFFF;
+            border-radius:0;
+            padding:8px;
+            min-height:180px;
         }
 
-        .sub-muted {
-            color: #6B7280;
-            font-size: 13px;
+        .calendar-day-cell.out-month {
+            background:#F3F4F6;
         }
 
-        .week-header {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 0;
-            border: 1px solid #E5E7EB;
-            border-bottom: none;
-            border-radius: 14px 14px 0 0;
-            overflow: hidden;
-            background: #FFFFFF;
-        }
-
-        .week-header-cell {
-            text-align: center;
-            padding: 14px 0;
-            font-weight: 700;
-            font-size: 15px;
-            border-right: 1px solid #F1F5F9;
-        }
-
-        .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 0;
-            border-left: 1px solid #E5E7EB;
-            border-right: 1px solid #E5E7EB;
-            border-bottom: 1px solid #E5E7EB;
-            border-radius: 0 0 14px 14px;
-            overflow: hidden;
-            background: #FFFFFF;
-        }
-
-        .calendar-cell {
-            min-height: 170px;
-            padding: 10px 8px;
-            border-top: 1px solid #E5E7EB;
-            border-right: 1px solid #E5E7EB;
-            background: #FFFFFF;
-        }
-
-        .calendar-cell.out-month {
-            background: #F3F4F6;
-        }
-
-        .day-number {
-            font-size: 14px;
-            font-weight: 800;
-            color: #111827;
-            margin-bottom: 10px;
-        }
-
-        .event-chip {
-            border-radius: 10px;
-            padding: 7px 8px;
-            margin-bottom: 6px;
-            line-height: 1.25;
-        }
-
-        .event-type {
-            font-size: 11px;
-            font-weight: 800;
-            margin-bottom: 3px;
-        }
-
-        .event-title {
-            font-size: 12px;
-            font-weight: 700;
-            color: #111827;
-            margin-bottom: 2px;
-        }
-
-        .event-meta {
-            font-size: 11px;
-            color: #4B5563;
-        }
-
-        .panel-card {
-            background: #FFFFFF;
-            border: 1px solid #E5E7EB;
-            border-radius: 16px;
-            padding: 18px;
+        .day-num {
+            font-size:14px;
+            font-weight:800;
+            margin-bottom:8px;
         }
 
         .mini-card {
-            background: #FFFFFF;
-            border: 1px solid #E5E7EB;
-            border-radius: 14px;
-            padding: 16px;
-            height: 100%;
+            background:#FFFFFF;
+            border:1px solid #E5E7EB;
+            border-radius:14px;
+            padding:16px;
+            height:100%;
+        }
+
+        .panel-card {
+            background:#FFFFFF;
+            border:1px solid #E5E7EB;
+            border-radius:16px;
+            padding:18px;
         }
 
         .pill {
-            display: inline-block;
-            padding: 6px 11px;
-            border-radius: 999px;
-            font-size: 12px;
-            font-weight: 700;
-            margin-right: 8px;
-            margin-bottom: 8px;
-            background: #F3F0FF;
-            color: #6D4CDB;
+            display:inline-block;
+            padding:6px 11px;
+            border-radius:999px;
+            font-size:12px;
+            font-weight:700;
+            margin-right:8px;
+            margin-bottom:8px;
+            background:#F3F0FF;
+            color:#6D4CDB;
         }
 
-        .legend-wrap {
-            text-align: center;
-            margin-top: 10px;
-            margin-bottom: 4px;
-        }
-
-        .legend-item {
-            display: inline-block;
-            margin-right: 22px;
-            color: #374151;
-            font-size: 13px;
-        }
-
-        .legend-dot {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 999px;
-            margin-right: 6px;
-            vertical-align: middle;
-        }
-
-        .info-label {
-            display: inline-block;
-            background: #F3F4F6;
-            color: #374151;
-            padding: 5px 9px;
+        div[data-testid="stButton"] > button.day-select-btn {
+            padding: 0.2rem 0.45rem;
+            min-height: 0;
+            height: 32px;
             border-radius: 8px;
-            font-size: 12px;
-            font-weight: 700;
-        }
-
-        .day-events-box {
+            border: 1px solid #D1D5DB;
             background: #FFFFFF;
-            border: 1px solid #E5E7EB;
-            border-radius: 16px;
-            padding: 16px;
+            font-weight: 700;
         }
         </style>
         """,
@@ -782,9 +675,9 @@ def inject_css():
     )
 
 
-# -----------------------------
+# -----------------------------------
 # 사이드바
-# -----------------------------
+# -----------------------------------
 def render_sidebar(df):
     with st.sidebar:
         st.markdown("## 이벤트 트렌드 캘린더")
@@ -815,9 +708,8 @@ def render_sidebar(df):
         selected_regions = st.multiselect("지역", all_regions, default=["전체 지역"])
 
         st.markdown("")
-        all_targets = DEFAULT_TARGETS
         selected_targets = []
-        for t in all_targets:
+        for t in DEFAULT_TARGETS:
             checked = st.checkbox(t, value=False, key=f"target_{t}")
             if checked:
                 selected_targets.append(t)
@@ -828,10 +720,86 @@ def render_sidebar(df):
         return selected_types, selected_regions, selected_targets, keyword, uploaded_df
 
 
-# -----------------------------
+# -----------------------------------
+# 상단 컨트롤
+# -----------------------------------
+def render_top_controls():
+    selected_date = st.session_state["selected_date"]
+    view_type = st.session_state["view_type"]
+
+    c1, c2, c3, c4, c5 = st.columns([0.7, 2.2, 2.0, 1.1, 1.1])
+
+    prev_month = (selected_date.replace(day=1) - timedelta(days=1)).replace(day=1)
+    next_month = (selected_date.replace(day=28) + timedelta(days=4)).replace(day=1)
+
+    with c1:
+        if st.button("‹", use_container_width=True):
+            st.session_state["selected_date"] = prev_month
+            if st.session_state["selected_day"].month != prev_month.month or st.session_state["selected_day"].year != prev_month.year:
+                st.session_state["selected_day"] = prev_month
+            st.rerun()
+
+    with c2:
+        st.markdown(f'<div class="top-title">{selected_date.year}년 {selected_date.month}월</div>', unsafe_allow_html=True)
+
+    with c3:
+        current_index = ["월", "주", "리스트"].index(view_type)
+        selected_view = st.radio(
+            "보기",
+            ["월", "주", "리스트"],
+            index=current_index,
+            horizontal=True,
+            label_visibility="collapsed",
+        )
+        st.session_state["view_type"] = selected_view
+
+    with c4:
+        if st.button("오늘", use_container_width=True):
+            st.session_state["selected_date"] = date(2026, 4, 15)
+            st.session_state["selected_day"] = date(2026, 4, 15)
+            st.rerun()
+
+    with c5:
+        if st.button("›", use_container_width=True):
+            st.session_state["selected_date"] = next_month
+            if st.session_state["selected_day"].month != next_month.month or st.session_state["selected_day"].year != next_month.year:
+                st.session_state["selected_day"] = next_month
+            st.rerun()
+
+    picked = st.date_input("선택 날짜", value=st.session_state["selected_day"])
+    st.session_state["selected_day"] = picked
+
+
+# -----------------------------------
 # 캘린더 렌더
-# -----------------------------
-def build_month_calendar_html(df, selected_date):
+# -----------------------------------
+def render_event_badge(row):
+    style = get_type_style(row["event_type"])
+    st.markdown(
+        f"""
+        <div style="
+            background:{style['bg']};
+            border-radius:10px;
+            padding:7px 8px;
+            margin-bottom:6px;
+            line-height:1.25;
+        ">
+            <div style="font-size:11px; font-weight:800; color:{style['text']}; margin-bottom:3px;">
+                {row['event_type']}
+            </div>
+            <div style="font-size:12px; font-weight:700; color:#111827; margin-bottom:2px;">
+                {row['event_name']}
+            </div>
+            <div style="font-size:11px; color:#4B5563;">
+                {row['venue_name']}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_month_calendar(df, selected_date):
     year = selected_date.year
     month = selected_date.month
     cal = calendar.Calendar(firstweekday=0)
@@ -840,57 +808,120 @@ def build_month_calendar_html(df, selected_date):
     weekday_names = ["월", "화", "수", "목", "금", "토", "일"]
     weekday_colors = ["#111827", "#111827", "#111827", "#111827", "#111827", "#2563EB", "#DC2626"]
 
-    header_html = '<div class="week-header">'
+    header_cols = st.columns(7)
     for i, wd in enumerate(weekday_names):
-        header_html += f'<div class="week-header-cell" style="color:{weekday_colors[i]};">{wd}</div>'
-    header_html += "</div>"
+        with header_cols[i]:
+            st.markdown(
+                f"""
+                <div style="
+                    text-align:center;
+                    font-weight:800;
+                    color:{weekday_colors[i]};
+                    background:#FFFFFF;
+                    border:1px solid #E5E7EB;
+                    border-bottom:none;
+                    padding:14px 0;
+                ">
+                    {wd}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
-    grid_html = '<div class="calendar-grid">'
-    for week in weeks:
+    for week_idx, week in enumerate(weeks):
+        cols = st.columns(7)
         for i, day in enumerate(week):
             daily = df[df.apply(lambda row: event_matches_day(row, day), axis=1)].sort_values(
                 ["importance_score", "benchmark_score", "sort_end"], ascending=[False, False, True]
             )
 
-            cell_class = "calendar-cell" if day.month == month else "calendar-cell out-month"
-            day_color = weekday_colors[i]
+            in_month = day.month == month
 
-            grid_html += f'<div class="{cell_class}">'
-            grid_html += f'<div class="day-number" style="color:{day_color};">{day.day}</div>'
+            with cols[i]:
+                bg = "#FFFFFF" if in_month else "#F3F4F6"
+                border_radius = "0"
+                if week_idx == len(weeks) - 1 and i == 0:
+                    border_radius = "0 0 0 14px"
+                elif week_idx == len(weeks) - 1 and i == 6:
+                    border_radius = "0 0 14px 0"
 
-            if daily.empty:
-                grid_html += ""
-            else:
-                for _, row in daily.head(3).iterrows():
-                    style = get_type_style(row["event_type"])
-                    grid_html += f"""
-                    <div class="event-chip" style="background:{style['bg']};">
-                        <div class="event-type" style="color:{style['text']};">{row['event_type']}</div>
-                        <div class="event-title">{row['event_name']}</div>
-                        <div class="event-meta">{row['venue_name']}</div>
-                    </div>
-                    """
-                extra = len(daily) - 3
-                if extra > 0:
-                    grid_html += f'<div class="event-meta">+ {extra}건 더 있음</div>'
+                st.markdown(
+                    f"""
+                    <div style="
+                        border:1px solid #E5E7EB;
+                        background:{bg};
+                        min-height:185px;
+                        padding:8px;
+                        border-radius:{border_radius};
+                    ">
+                    """,
+                    unsafe_allow_html=True,
+                )
 
-            grid_html += "</div>"
+                day_color = weekday_colors[i]
+                is_selected = day == st.session_state["selected_day"]
 
-    grid_html += "</div>"
-    return header_html + grid_html
+                btn_label = f"{day.day}"
+                if is_selected:
+                    st.markdown(
+                        f"""
+                        <div style="
+                            display:inline-block;
+                            background:#111827;
+                            color:#FFFFFF;
+                            font-size:13px;
+                            font-weight:800;
+                            border-radius:999px;
+                            padding:4px 9px;
+                            margin-bottom:8px;
+                        ">
+                            {btn_label}
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+                else:
+                    if st.button(
+                        btn_label,
+                        key=f"day_btn_{day.isoformat()}",
+                        help=f"{day.isoformat()} 선택",
+                        use_container_width=False,
+                    ):
+                        st.session_state["selected_day"] = day
+                        st.rerun()
 
+                if daily.empty:
+                    st.caption(" ")
+                else:
+                    for _, row in daily.head(2).iterrows():
+                        render_event_badge(row)
+                    extra = len(daily) - 2
+                    if extra > 0:
+                        st.caption(f"+ {extra}건 더 있음")
 
-def render_month_calendar(df, selected_date):
-    st.markdown(build_month_calendar_html(df, selected_date), unsafe_allow_html=True)
+                st.markdown("</div>", unsafe_allow_html=True)
 
-    legend_html = '<div class="legend-wrap">'
-    for label in ["전시", "팝업", "경쟁사 이벤트", "지자체 행사", "협업/브랜드"]:
-        style = get_type_style(label)
-        legend_html += (
-            f'<span class="legend-item"><span class="legend-dot" style="background:{style["dot"]};"></span>{label}</span>'
-        )
-    legend_html += "</div>"
-    st.markdown(legend_html, unsafe_allow_html=True)
+    legend = st.columns(5)
+    labels = ["전시", "팝업", "경쟁사 이벤트", "지자체 행사", "협업/브랜드"]
+    for idx, label in enumerate(labels):
+        with legend[idx]:
+            style = get_type_style(label)
+            st.markdown(
+                f"""
+                <div style="text-align:center; font-size:13px; color:#374151; margin-top:8px;">
+                    <span style="
+                        display:inline-block;
+                        width:10px;
+                        height:10px;
+                        border-radius:999px;
+                        background:{style['dot']};
+                        margin-right:6px;
+                    "></span>
+                    {label}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
 
 def render_week_view(df, selected_date):
@@ -901,22 +932,16 @@ def render_week_view(df, selected_date):
     for idx, day in enumerate(days):
         with cols[idx]:
             st.markdown(f"**{day.strftime('%m.%d')}**")
+            if st.button("이 날짜 보기", key=f"week_{day.isoformat()}"):
+                st.session_state["selected_day"] = day
+                st.rerun()
+
             daily = df[df.apply(lambda row: event_matches_day(row, day), axis=1)]
             if daily.empty:
                 st.caption("일정 없음")
             else:
                 for _, row in daily.iterrows():
-                    style = get_type_style(row["event_type"])
-                    st.markdown(
-                        f"""
-                        <div style="background:{style['bg']}; border-radius:10px; padding:8px; margin-bottom:8px;">
-                            <div style="font-size:11px; font-weight:800; color:{style['text']};">{row['event_type']}</div>
-                            <div style="font-size:12px; font-weight:700;">{row['event_name']}</div>
-                            <div style="font-size:11px; color:#4B5563;">{row['venue_name']}</div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+                    render_event_badge(row)
 
 
 def render_list_view(df):
@@ -943,45 +968,104 @@ def render_list_view(df):
         )
 
 
-# -----------------------------
-# 하단/우측 패널
-# -----------------------------
-def render_day_events_center(df, selected_day):
-    daily = df[df.apply(lambda row: event_matches_day(row, selected_day), axis=1)].sort_values(
+# -----------------------------------
+# 선택 날짜 이벤트 / 우측 패널
+# -----------------------------------
+def get_daily_events(df, selected_day):
+    return df[df.apply(lambda row: event_matches_day(row, selected_day), axis=1)].sort_values(
         ["importance_score", "benchmark_score", "sort_end"], ascending=[False, False, True]
     )
 
+
+def render_day_events_center(df, selected_day):
+    daily = get_daily_events(df, selected_day)
+
     st.markdown("### 선택 날짜 일정")
-    st.markdown(f'<div class="sub-muted">{selected_day.strftime("%Y.%m.%d")} 기준</div>', unsafe_allow_html=True)
+    st.caption(f"{selected_day.strftime('%Y.%m.%d')} 기준")
 
     if daily.empty:
         st.info("선택한 날짜에 진행 중인 일정이 없습니다.")
         return daily
 
-    st.markdown('<div class="day-events-box">', unsafe_allow_html=True)
-    for _, row in daily.iterrows():
-        style = get_type_style(row["event_type"])
-        st.markdown(
-            f"""
-            <div style="padding:10px 0; border-bottom:1px solid #F1F5F9;">
-                <div style="font-size:12px; font-weight:800; color:{style['text']}; margin-bottom:4px;">
-                    {row['event_type']}
+    cols = st.columns(2)
+    for idx, (_, row) in enumerate(daily.iterrows()):
+        with cols[idx % 2]:
+            style = get_type_style(row["event_type"])
+            st.markdown(
+                f"""
+                <div class="panel-card" style="margin-bottom:10px;">
+                    <div style="display:inline-block; background:{style['bg']}; color:{style['text']};
+                        padding:5px 10px; border-radius:999px; font-size:12px; font-weight:800; margin-bottom:10px;">
+                        {row['event_type']}
+                    </div>
+                    <div style="font-size:18px; font-weight:800; color:#111827; margin-bottom:4px;">
+                        {row['event_name']}
+                    </div>
+                    <div style="font-size:13px; color:#6B7280; margin-bottom:6px;">
+                        {row['venue_name']} · {row['region']} · {short_period(row['start_date'], row['end_date'])}
+                    </div>
+                    <div style="font-size:13px; color:#374151; line-height:1.55;">
+                        {text_or_default(row['one_line_summary'])}
+                    </div>
                 </div>
-                <div style="font-size:16px; font-weight:800; color:#111827;">{row['event_name']}</div>
-                <div style="font-size:13px; color:#6B7280; margin-top:4px;">
-                    {row['venue_name']} · {row['region']} · {short_period(row['start_date'], row['end_date'])}
-                </div>
-                <div style="font-size:13px; color:#374151; margin-top:8px;">
-                    {text_or_default(row['one_line_summary'])}
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    st.markdown("</div>", unsafe_allow_html=True)
+                """,
+                unsafe_allow_html=True,
+            )
     return daily
 
 
+def render_right_panel(filtered_df, selected_day):
+    st.markdown("### 상세 이벤트")
+
+    daily = get_daily_events(filtered_df, selected_day)
+
+    if daily.empty:
+        st.info("선택 날짜에 표시할 상세 이벤트가 없습니다.")
+        return
+
+    options = {f"[{row['event_type']}] {row['event_name']}": idx for idx, row in daily.iterrows()}
+    selected_label = st.selectbox("상세 이벤트 선택", list(options.keys()), label_visibility="collapsed")
+    row = daily.loc[options[selected_label]]
+
+    style = get_type_style(row["event_type"])
+
+    st.markdown(
+        f"""
+        <div class="panel-card">
+            <div style="display:inline-block; background:{style['bg']}; color:{style['text']}; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:800; margin-bottom:10px;">
+                {row['event_type']}
+            </div>
+            <div style="font-size:20px; font-weight:800; color:#111827; margin-bottom:6px;">{row['event_name']}</div>
+            <div style="font-size:14px; color:#374151; margin-bottom:6px;">{row['venue_name']}</div>
+            <div style="font-size:13px; color:#6B7280; margin-bottom:6px;">{format_period(row['start_date'], row['end_date'])}</div>
+            <div style="font-size:13px; color:#6B7280; margin-bottom:18px;">📍 {text_or_default(row['address'])}</div>
+
+            <div style="font-size:15px; font-weight:800; margin-bottom:8px;">핵심 요약</div>
+            <div style="font-size:14px; color:#374151; line-height:1.6; margin-bottom:18px;">{text_or_default(row['ai_summary'])}</div>
+
+            <div style="font-size:15px; font-weight:800; margin-bottom:10px;">상세 정보</div>
+            <div style="margin-bottom:8px;"><b>유형</b> · {row['event_type']}</div>
+            <div style="margin-bottom:8px;"><b>타깃</b> · {row['target_estimate']}</div>
+            <div style="margin-bottom:8px;"><b>주요 콘텐츠</b> · {row['main_content']}</div>
+            <div style="margin-bottom:8px;"><b>주최/브랜드</b> · {row['host_brand']}</div>
+
+            <div style="font-size:15px; font-weight:800; margin:20px 0 8px;">AI 인사이트</div>
+            <div style="font-size:14px; color:#374151; line-height:1.6; margin-bottom:18px;">
+                최근 {row['event_type']} 유형의 증가와 체험형 콘텐츠 선호가 함께 나타납니다.
+                롯데백화점 행사 기획에 바로 참고할 수 있는 레퍼런스입니다.
+            </div>
+
+            <div style="font-size:15px; font-weight:800; margin-bottom:8px;">롯데 적용 아이디어</div>
+            <div style="font-size:14px; color:#374151; line-height:1.7;">✓ {text_or_default(row['lotte_idea'])}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+# -----------------------------------
+# 하단 카드
+# -----------------------------------
 def render_bottom_cards(df, insights):
     total_count = len(df)
     exhibition_count = (df["event_type"] == "전시").sum()
@@ -1035,106 +1119,9 @@ def render_bottom_cards(df, insights):
         )
 
 
-def render_right_panel(filtered_df, selected_day):
-    st.markdown("### 상세 이벤트")
-
-    daily = filtered_df[filtered_df.apply(lambda row: event_matches_day(row, selected_day), axis=1)].sort_values(
-        ["importance_score", "benchmark_score", "sort_end"], ascending=[False, False, True]
-    )
-
-    if daily.empty:
-        st.info("선택 날짜에 표시할 상세 이벤트가 없습니다.")
-        return
-
-    options = {f"[{row['event_type']}] {row['event_name']}": idx for idx, row in daily.iterrows()}
-    selected_label = st.selectbox("상세 이벤트 선택", list(options.keys()), label_visibility="collapsed")
-    row = daily.loc[options[selected_label]]
-
-    style = get_type_style(row["event_type"])
-
-    st.markdown(
-        f"""
-        <div class="panel-card">
-            <div style="display:inline-block; background:{style['bg']}; color:{style['text']}; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:800; margin-bottom:10px;">
-                {row['event_type']}
-            </div>
-            <div style="font-size:20px; font-weight:800; color:#111827; margin-bottom:6px;">{row['event_name']}</div>
-            <div style="font-size:14px; color:#374151; margin-bottom:6px;">{row['venue_name']}</div>
-            <div style="font-size:13px; color:#6B7280; margin-bottom:6px;">{format_period(row['start_date'], row['end_date'])}</div>
-            <div style="font-size:13px; color:#6B7280; margin-bottom:18px;">📍 {text_or_default(row['address'])}</div>
-
-            <div style="font-size:15px; font-weight:800; margin-bottom:8px;">핵심 요약</div>
-            <div style="font-size:14px; color:#374151; line-height:1.6; margin-bottom:18px;">{text_or_default(row['ai_summary'])}</div>
-
-            <div style="font-size:15px; font-weight:800; margin-bottom:10px;">상세 정보</div>
-            <div style="margin-bottom:8px;"><span class="info-label">유형</span> <span style="margin-left:10px;">{row['event_type']}</span></div>
-            <div style="margin-bottom:8px;"><span class="info-label">타깃</span> <span style="margin-left:10px;">{row['target_estimate']}</span></div>
-            <div style="margin-bottom:8px;"><span class="info-label">주요 콘텐츠</span> <span style="margin-left:10px;">{row['main_content']}</span></div>
-            <div style="margin-bottom:8px;"><span class="info-label">주최/브랜드</span> <span style="margin-left:10px;">{row['host_brand']}</span></div>
-
-            <div style="font-size:15px; font-weight:800; margin:20px 0 8px;">AI 인사이트</div>
-            <div style="font-size:14px; color:#374151; line-height:1.6; margin-bottom:18px;">
-                최근 {row['event_type']} 유형의 증가와 체험형 콘텐츠 선호가 함께 나타납니다.
-                롯데백화점 행사 기획에 바로 참고할 수 있는 레퍼런스입니다.
-            </div>
-
-            <div style="font-size:15px; font-weight:800; margin-bottom:8px;">롯데 적용 아이디어</div>
-            <div style="font-size:14px; color:#374151; line-height:1.7;">✓ {text_or_default(row['lotte_idea'])}</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-# -----------------------------
-# 상단 바
-# -----------------------------
-def render_top_controls():
-    selected_date = st.session_state["selected_date"]
-    view_type = st.session_state["view_type"]
-
-    c1, c2, c3, c4, c5 = st.columns([0.7, 2.4, 2.2, 1.2, 1.2])
-
-    prev_month = (selected_date.replace(day=1) - timedelta(days=1)).replace(day=1)
-    next_month = (selected_date.replace(day=28) + timedelta(days=4)).replace(day=1)
-
-    with c1:
-        if st.button("‹", use_container_width=True):
-            st.session_state["selected_date"] = prev_month
-            st.rerun()
-
-    with c2:
-        st.markdown(f'<div class="top-title">{selected_date.year}년 {selected_date.month}월</div>', unsafe_allow_html=True)
-
-    with c3:
-        current_index = ["월", "주", "리스트"].index(view_type)
-        selected_view = st.radio(
-            "보기",
-            ["월", "주", "리스트"],
-            index=current_index,
-            horizontal=True,
-            label_visibility="collapsed",
-        )
-        st.session_state["view_type"] = selected_view
-
-    with c4:
-        if st.button("오늘", use_container_width=True):
-            st.session_state["selected_date"] = date(2026, 4, 15)
-            st.session_state["selected_day"] = date(2026, 4, 15)
-            st.rerun()
-
-    with c5:
-        if st.button("›", use_container_width=True):
-            st.session_state["selected_date"] = next_month
-            st.rerun()
-
-    selected_day = st.date_input("선택 날짜", value=st.session_state["selected_day"])
-    st.session_state["selected_day"] = selected_day
-
-
-# -----------------------------
+# -----------------------------------
 # 메인
-# -----------------------------
+# -----------------------------------
 def main():
     inject_css()
 
